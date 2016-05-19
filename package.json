@@ -1,0 +1,64 @@
+{
+  "name": "pouchdb-live-find",
+  "version": "0.1.0",
+  "description": "Live PouchDB queries that update automatically as changes come in!",
+  "main": "./lib/index.js",
+  "scripts": {
+    "test": "gulp test-node"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/colinskow/pouchdb-live-find.git"
+  },
+  "keywords": [
+    "pouch",
+    "pouchdb",
+    "plugin",
+    "find",
+    "mango",
+    "query",
+    "couch",
+    "couchdb",
+    "live",
+    "flux",
+    "redux",
+    "real-time"
+  ],
+  "author": "Colin Skow",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/colinskow/pouchdb-live-find/issues"
+  },
+  "homepage": "https://github.com/colinskow/pouchdb-live-find",
+  "dependencies": {
+    "pouchdb-collate": "^1.2.0",
+    "pouchdb-find": "^0.9.0"
+  },
+  "devDependencies": {
+    "browserify": "^13.0.1",
+    "chai": "^3.5.0",
+    "debounce": "^1.0.0",
+    "gulp": "^3.9.1",
+    "gulp-jshint": "^2.0.1",
+    "gulp-mocha": "^2.2.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-streamify": "^1.0.2",
+    "gulp-uglify": "^1.5.3",
+    "jshint": "^2.9.2",
+    "jshint-stylish": "^2.2.0",
+    "karma": "^0.13.22",
+    "karma-chrome-launcher": "^1.0.1",
+    "karma-mocha": "^1.0.1",
+    "memdown": "^1.1.2",
+    "mocha": "^2.4.5",
+    "pouchdb": "^5.3.2",
+    "promise-defer": "^1.0.0",
+    "rename": "^1.0.3",
+    "rimraf": "^2.5.2",
+    "source": "0.0.3",
+    "streamify": "^0.2.5",
+    "stylish": "^0.6.0",
+    "uglify": "^0.1.5",
+    "vinyl-source-stream": "^1.1.0"
+  }
+}
