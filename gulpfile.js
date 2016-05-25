@@ -12,7 +12,8 @@ var gulp   = require('gulp'),
 
 gulp.task('lint', function() {
   return gulp.src(['./lib/*.js', './test/*.js', './examples/*.js'])
-    .pipe(jshint({node: true, browser: true, validthis: true, globals: {Promise: true}}))
+    .pipe(jshint({node: true, browser: true, validthis: true,
+      eqnull: true, globals: {Promise: true}}))
     .pipe(jshint.reporter(stylish))
     .pipe(jshint.reporter('fail'));
 });

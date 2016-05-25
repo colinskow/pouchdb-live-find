@@ -293,7 +293,7 @@ describe('PouchDB LiveFind', function() {
         return watcher4.fetchListUpdates(2);
       })
       .then(function(aggregates) {
-        expect(aggregates).to.deep.equal([ ['mario'], ['dk', 'mario'] ]);
+        expect(aggregates).to.deep.equal([ ['mario'], ['mario', 'dk'] ]);
         return Promise.all([
           watcher4.fetchListUpdates(2),
           db.bulkDocs(smashers2)
@@ -303,8 +303,8 @@ describe('PouchDB LiveFind', function() {
         // Testing add to list
         var aggregates = result[0];
         expect(aggregates).to.deep.equal([
-          [ 'dk', 'luigi', 'mario' ],
-          [ 'dk', 'luigi', 'mario', 'yoshi' ] ]
+          [ 'mario', 'luigi', 'dk' ],
+          [ 'yoshi', 'mario', 'luigi', 'dk' ] ]
         );
         return db.get('luigi');
       })
@@ -317,7 +317,7 @@ describe('PouchDB LiveFind', function() {
       })
       .then(function(result) {
         var aggregates = result[0];
-        expect(aggregates).to.deep.equal([ [ 'dk', 'mario', 'yoshi' ] ]);
+        expect(aggregates).to.deep.equal([ [ 'yoshi', 'mario', 'dk' ] ]);
         return db.get('yoshi');
       })
       .then(function(yoshi) {
@@ -330,7 +330,7 @@ describe('PouchDB LiveFind', function() {
       })
       .then(function(result) {
         var aggregates = result[0];
-        expect(aggregates).to.deep.equal([ [ 'yoshi', 'dk', 'mario' ] ]);
+        expect(aggregates).to.deep.equal([ [ 'mario', 'dk', 'yoshi' ] ]);
         feed4.cancel();
       });
   });
@@ -389,20 +389,50 @@ describe('PouchDB LiveFind', function() {
         expect(aggregates).to.deep.equal([
             [],
             [],
-            [ 'link' ],
-            [ 'pikachu', 'link' ],
-            [ 'puff', 'pikachu', 'link' ],
-            [ 'mario', 'puff', 'pikachu' ] ]);
+            [ 'puff' ],
+            [ 'puff', 'mario' ],
+            [ 'puff', 'mario', 'dk' ],
+            [ 'puff', 'mario', 'dk' ] ]);
       });
   });
 
   it('should have a working custom sort function', function() {
     return previous
       .then(function() {
-        var sorted = feed6.sort(smashers1).map(function(item) {
-          return item._id;
-        });
-        expect(sorted).to.deep.equal([ 'falcon', 'dk', 'mario', 'puff', 'pikachu', 'link' ]);
+        var sorted = feed6.sort(smashers1).map(mapById);
+        expect(sorted).to.deep.equal([ 'link', 'pikachu', 'puff', 'mario', 'dk', 'falcon' ]);
+      });
+  });
+
+  it('paginate should set a different sort, skip and limit', function() {
+    return previous
+      .then(function() {
+        var result1 = feed6.paginate({
+          sort: [{series: 'desc'}, {name: 'desc'}],
+          skip: 0,
+          limit: 0
+        }).map(mapById);
+        expect(result1).to.deep.equal(['link', 'pikachu', 'puff', 'mario', 'dk', 'falcon']);
+        var result2 = feed6.paginate({
+          sort: [{series: 'asc'}, {name: 'asc'}],
+          skip: 0,
+          limit: 0
+        }).map(mapById);
+        expect(result2).to.deep.equal(['falcon', 'dk', 'mario', 'puff', 'pikachu', 'link']);
+        var result3 = feed6.paginate({
+          skip: 2,
+          limit: 3
+        }).map(mapById);
+        expect(result3).to.deep.equal(['mario', 'puff', 'pikachu']);
+        // Now we'll make sure that updates keep the new pagination
+        return Promise.all( [
+          watcher6.fetchListUpdates(1),
+          db.put({ name: 'Bulbasaur', _id: 'bulb', series: 'Pokemon', debut: 1996 })
+        ]);
+      })
+      .then(function(results) {
+        var update = results[0][0];
+        expect(update).to.deep.equal(['mario', 'bulb', 'puff']);
         feed6.cancel();
       });
   });
@@ -429,4 +459,8 @@ function createDB(name) {
     return new PouchDB(name, {db: memdown});
   }
   return new PouchDB(name, {adapter: 'memory'});
+}
+
+function mapById(item) {
+  return item._id;
 }
