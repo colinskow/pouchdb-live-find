@@ -1,7 +1,7 @@
 {
   "name": "pouchdb-live-find",
   "description": "Live PouchDB queries that update automatically as changes come in!",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Colin Skow",
   "license": "MIT",
   "homepage": "https://github.com/colinskow/pouchdb-live-find",
