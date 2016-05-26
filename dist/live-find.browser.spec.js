@@ -61,8 +61,8 @@ describe('PouchDB LiveFind', function() {
 
   var previous;
   var db = createDB('liveFindTest');
-  var feed1, feed2, feed3, feed4, feed5, feed6;
-  var watcher1, watcher2, watcher3, watcher4, watcher5, watcher6;
+  var feed1, feed2, feed3, feed4, feed5, feed6, feed7;
+  var watcher1, watcher2, watcher3, watcher4, watcher5, watcher6, watcher7;
 
   before(function() {
     previous = db.createIndex({
@@ -315,7 +315,7 @@ describe('PouchDB LiveFind', function() {
         return watcher4.fetchListUpdates(2);
       })
       .then(function(aggregates) {
-        expect(aggregates).to.deep.equal([ ['mario'], ['dk', 'mario'] ]);
+        expect(aggregates[1]).to.deep.equal(['mario', 'dk']);
         return Promise.all([
           watcher4.fetchListUpdates(2),
           db.bulkDocs(smashers2)
@@ -325,8 +325,8 @@ describe('PouchDB LiveFind', function() {
         // Testing add to list
         var aggregates = result[0];
         expect(aggregates).to.deep.equal([
-          [ 'dk', 'luigi', 'mario' ],
-          [ 'dk', 'luigi', 'mario', 'yoshi' ] ]
+          [ 'mario', 'luigi', 'dk' ],
+          [ 'yoshi', 'mario', 'luigi', 'dk' ] ]
         );
         return db.get('luigi');
       })
@@ -339,7 +339,7 @@ describe('PouchDB LiveFind', function() {
       })
       .then(function(result) {
         var aggregates = result[0];
-        expect(aggregates).to.deep.equal([ [ 'dk', 'mario', 'yoshi' ] ]);
+        expect(aggregates).to.deep.equal([ [ 'yoshi', 'mario', 'dk' ] ]);
         return db.get('yoshi');
       })
       .then(function(yoshi) {
@@ -352,7 +352,7 @@ describe('PouchDB LiveFind', function() {
       })
       .then(function(result) {
         var aggregates = result[0];
-        expect(aggregates).to.deep.equal([ [ 'yoshi', 'dk', 'mario' ] ]);
+        expect(aggregates).to.deep.equal([ [ 'mario', 'dk', 'yoshi' ] ]);
         feed4.cancel();
       });
   });
@@ -408,24 +408,85 @@ describe('PouchDB LiveFind', function() {
         return watcher6.fetchListUpdates(6);
       })
       .then(function(aggregates) {
-        expect(aggregates).to.deep.equal([
-            [],
-            [],
-            [ 'link' ],
-            [ 'pikachu', 'link' ],
-            [ 'puff', 'pikachu', 'link' ],
-            [ 'mario', 'puff', 'pikachu' ] ]);
+        expect(aggregates[5]).to.deep.equal(['puff', 'mario', 'dk']);
       });
   });
 
   it('should have a working custom sort function', function() {
     return previous
       .then(function() {
-        var sorted = feed6.sort(smashers1).map(function(item) {
-          return item._id;
-        });
-        expect(sorted).to.deep.equal([ 'falcon', 'dk', 'mario', 'puff', 'pikachu', 'link' ]);
+        var sorted = feed6.sort(smashers1).map(mapById);
+        expect(sorted).to.deep.equal([ 'link', 'pikachu', 'puff', 'mario', 'dk', 'falcon' ]);
+      });
+  });
+
+  it('paginate should set a different sort, skip and limit', function() {
+    return previous
+      .then(function() {
+        var result1 = feed6.paginate({
+          sort: [{series: 'desc'}, {name: 'desc'}],
+          skip: 0,
+          limit: 0
+        }).map(mapById);
+        expect(result1).to.deep.equal(['link', 'pikachu', 'puff', 'mario', 'dk', 'falcon']);
+        var result2 = feed6.paginate({
+          sort: [{series: 'asc'}, {name: 'asc'}],
+          skip: 0,
+          limit: 0
+        }).map(mapById);
+        expect(result2).to.deep.equal(['falcon', 'dk', 'mario', 'puff', 'pikachu', 'link']);
+        var result3 = feed6.paginate({
+          skip: 2,
+          limit: 3
+        }).map(mapById);
+        expect(result3).to.deep.equal(['mario', 'puff', 'pikachu']);
+        // Now we'll make sure that updates keep the new pagination
+        return Promise.all( [
+          watcher6.fetchListUpdates(1),
+          db.put({ name: 'Bulbasaur', _id: 'bulb', series: 'Pokemon', debut: 1996 })
+        ]);
+      })
+      .then(function(results) {
+        var update = results[0][0];
+        expect(update).to.deep.equal(['mario', 'bulb', 'puff']);
         feed6.cancel();
+      });
+  });
+
+  it('should sort fields with mixed directions', function() {
+    var sortDocs = [
+      {_id: 'apple', letter: 'a', word: 'Apple'},
+      {_id: 'axel', letter: 'a', word: 'Axel'},
+      {_id: 'abby', letter: 'a', word: 'Abby'},
+      {_id: 'bat', letter: 'b', word: 'Bat'},
+      {_id: 'bone', letter: 'b', word: 'Bone'},
+      {_id: 'better', letter: 'b', word: 'Better'}
+    ];
+    return previous
+      .then(function() {
+        return db.destroy();
+      })
+      .then(function() {
+        db = createDB('liveFindTest');
+        return db.createIndex({
+          index: {fields: ['letter', 'word']}
+        });
+      })
+      .then(function() {
+        return db.bulkDocs(sortDocs);
+      })
+      .then(function() {
+        feed7 = db.liveFind({
+          selector: {letter: {$gt: null}},
+          sort: [{letter: 'desc'}, {word: 'asc'}],
+          aggregate: true
+        });
+        watcher7 = new UpdateWatcher(feed7);
+        return watcher7.fetchListUpdates(6);
+      })
+      .then(function(results) {
+        expect(results[5]).to.deep.equal(['bat', 'better', 'bone', 'abby', 'apple', 'axel']);
+        feed7.cancel();
       });
   });
 
@@ -451,6 +512,10 @@ function createDB(name) {
     return new PouchDB(name, {db: memdown});
   }
   return new PouchDB(name, {adapter: 'memory'});
+}
+
+function mapById(item) {
+  return item._id;
 }
 },{"../lib/index":undefined,"./watcher":3,"chai":undefined,"memdown":undefined,"pouchdb":undefined,"pouchdb-find":undefined}],3:[function(require,module,exports){
 'use strict';

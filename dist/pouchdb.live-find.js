@@ -6,6 +6,7 @@ var utils = require('pouchdb-find/lib/utils');
 var localUtils = require('pouchdb-find/lib/adapters/local/utils');
 var getUserFields = localUtils.getUserFields;
 var getKey = localUtils.getKey;
+var getValue = localUtils.getValue;
 var parseField = localUtils.parseField;
 
 exports.memoryFilter = function(docs, requestDef) {
@@ -30,15 +31,25 @@ exports.createFieldSorter = function(sort) {
     });
   }
 
+  var directions = sort.map(function(sorting) {
+    if (typeof sorting !== 'string' &&
+      getValue(sorting) === 'desc') {
+      return -1;
+    }
+    return 1;
+  });
+
   return function (aRow, bRow) {
     var aFieldValues = getFieldValuesAsArray(aRow);
     var bFieldValues = getFieldValuesAsArray(bRow);
-    var collation = collate(aFieldValues, bFieldValues);
-    if (collation !== 0) {
-      return collation;
+    for(var i=0, len=directions.length; i<len; i++) {
+      var collation = collate(aFieldValues[i], bFieldValues[i]);
+      if (collation !== 0) {
+        return collation * directions[i];
+      }
     }
     // this is what mango seems to do
-    return utils.compare(aRow._id, bRow._id);
+    return utils.compare(aRow._id, bRow._id) * directions[0];
   };
 };
 
@@ -60,6 +71,7 @@ var helpers = require('./helpers');
 var collate = require('pouchdb-collate').collate;
 var utils = require('pouchdb-find/lib/utils');
 var localUtils = require('pouchdb-find/lib/adapters/local/utils');
+var getValue = localUtils.getValue;
 var massageSelector = localUtils.massageSelector;
 var massageSort = localUtils.massageSort;
 
@@ -95,22 +107,18 @@ function liveFind(requestDef) {
   if(requestDef.selector) {
     selector = massageSelector(requestDef.selector);
   }
-  var sort;
+  var sort, sortFn;
   if(requestDef.sort) {
     sort = massageSort(requestDef.sort);
-  }
-  var skip = requestDef.skip || 0;
-  var limit = requestDef.limit;
-  var findRequest = {
-    selector: selector,
-    sort: sort,
-    fields: fields
-  };
-
-  var sortFn;
-  if(sort) {
     sortFn = helpers.createFieldSorter(sort);
   }
+  var skip = parseInt(requestDef.skip, 10) || 0;
+  var limit = parseInt(requestDef.limit, 10) || 0;
+  var findRequest = {
+    selector: selector,
+    // sort: sort,
+    fields: fields
+  };
 
   var ready = db.find(findRequest)
     .then(function(results) {
@@ -151,10 +159,10 @@ function liveFind(requestDef) {
     if(!sort) {
       return list;
     }
-    return list.sort(sortFn);
+    return sortList(list);
   };
 
-
+  emitter.paginate = paginate;
 
   function changeHandler(change) {
     ready.then(function() {
@@ -282,10 +290,23 @@ function liveFind(requestDef) {
     emitter.emit('update', { action: 'UPDATE', id: id, rev: rev, doc: doc }, list);
   }
 
+  /* function sortList(list) {
+    list = list.sort(sortFn);
+    if (typeof sort[0] !== 'string' &&
+      getValue(sort[0]) === 'desc') {
+      list = list.reverse();
+    }
+    return list;
+  } */
+
+  function sortList(list) {
+    return list.sort(sortFn);
+  }
+
   // Applies sort, skip, and limit to a list
   function formatList(list) {
     if(sort) {
-      list = list.sort(sortFn);
+      list = sortList(list);
     }
     if(skip || limit) {
       if(limit) {
@@ -295,6 +316,23 @@ function liveFind(requestDef) {
       }
     }
     return list;
+  }
+
+  function paginate(options) {
+    if(!aggregate || !options || typeof options !== 'object') {
+      return;
+    }
+    if(options.skip != null) {
+      skip = parseInt(options.skip, 10) || 0;
+    }
+    if(options.limit != null) {
+      limit = parseInt(options.limit, 10) || 0;
+    }
+    if(options.sort && options.sort instanceof Array) {
+      sort = massageSort(options.sort);
+      sortFn = helpers.createFieldSorter(sort);
+    }
+    return formatList(docList);
   }
 
   return emitter;

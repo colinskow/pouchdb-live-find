@@ -64,10 +64,10 @@ db.createIndex({
 })
 
 /* Outputs:
- ADD mario
- New List:  [ 'Mario' ]
  ADD dk
- New List:  [ 'Donkey Kong', 'Mario' ]
+ New List:  [ 'Donkey Kong' ]
+ ADD mario
+ New List:  [ 'Mario', 'Donkey Kong' ]
  Initial query complete.
 */
 
@@ -80,7 +80,7 @@ db.createIndex({
   
 /* Outputs:
  ADD wario
- New List:  [ 'Donkey Kong', 'Mario', 'Wario' ]
+ New List:  [ 'Wario', 'Mario', 'Donkey Kong' ]
 */
 
 // Update a doc
@@ -94,7 +94,7 @@ db.createIndex({
 
 /* Outputs:
  UPDATE mario
- New List:  [ 'Baby Mario', 'Donkey Kong', 'Wario' ]
+ New List:  [ 'Wario', 'Donkey Kong', 'Baby Mario' ]
 */
 
 // When a doc no longer matches your query it is removed
@@ -103,6 +103,21 @@ db.createIndex({
 }).then(function(dk) {
   dk.series = 'Donkey Kong';
   return db.put(dk);
+})
+
+/* Outputs:
+ REMOVE dk
+ New List:  [ 'Wario', 'Baby Mario' ]
+*/
+
+// You can use the paginate function to change the sort order, skip and limit on the fly
+.then(function() {
+  setTimeout(function() {
+    var newList = liveFeed.paginate({
+      sort: [{name: 'asc'}]
+    });
+    refreshUI(newList);
+  }, 10);
 })
 
 /* Outputs:
@@ -119,10 +134,10 @@ db.createIndex({
 
 // When you are done listening to updates cancel the listener to save resources
 .then(function() {
-  // setTimeout prevents the feed from cancelling before it is finished
+  // setTimeout prevents the feed from cancelling before it is finished processing updates
   setTimeout(function() {
     liveFeed.cancel();
-  });
+  }, 25);
 });
 // Outputs: "LiveFind cancelled."
 

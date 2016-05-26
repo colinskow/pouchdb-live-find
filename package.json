@@ -1,6 +1,6 @@
 {
   "name": "pouchdb-live-find",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Live PouchDB queries that update automatically as changes come in!",
   "main": "./lib/index.js",
   "scripts": {
@@ -37,7 +37,6 @@
   "devDependencies": {
     "browserify": "^13.0.1",
     "chai": "^3.5.0",
-    "debounce": "^1.0.0",
     "gulp": "^3.9.1",
     "gulp-jshint": "^2.0.1",
     "gulp-mocha": "^2.2.0",
@@ -50,10 +49,9 @@
     "karma-chrome-launcher": "^1.0.1",
     "karma-mocha": "^1.0.1",
     "memdown": "^1.1.2",
-    "mocha": "^2.4.5",
+    "mocha": "^2.5.3",
     "pouchdb": "^5.3.2",
     "promise-defer": "^1.0.0",
-    "rename": "^1.0.3",
     "rimraf": "^2.5.2",
     "source": "0.0.3",
     "streamify": "^0.2.5",

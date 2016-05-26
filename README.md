@@ -100,7 +100,7 @@ For more information see `examples/tutorial.js`.
 
 ## API
 
-LiveFind uses the exact same API as [`pouchdb-find`](https://github.com/nolanlawson/pouchdb-find) with the addition of the `aggregate` option. For details, see the [`pouchdb-find` documentation](https://github.com/nolanlawson/pouchdb-find) as well as [Cloudant Query](https://docs.cloudant.com/cloudant_query.html).
+LiveFind uses the exact same API as [`pouchdb-find`](https://github.com/nolanlawson/pouchdb-find) with the addition of the `aggregate` option. Also LiveFind has none of the sort restrictions of PouchDB Find. You can sort by any list of fields, and even with mixed sort directions. (Just make sure the `fields` options doesn't remove fields needed to sort.) For details, see the [`pouchdb-find` documentation](https://github.com/nolanlawson/pouchdb-find) as well as [Cloudant Query](https://docs.cloudant.com/cloudant_query.html).
 
 #### `db.liveFind(request)`
 
@@ -119,6 +119,7 @@ LiveFind uses the exact same API as [`pouchdb-find`](https://github.com/nolanlaw
 * `liveFeed.then(...)` hooks into the `pouchdb-find` promise and resolves when the initial query is complete
 * `liveFeed.catch(...)` hooks into the `pouchdb-find` promise and catches any errors with the initial query
 * `liveFeed.sort(list)` a convenience function to sort any list in place by the `sort` order you provided. (This will mutate the Array.)
+* `liveFeed.paginate(options)` updates the pagination and sorting of the aggregate list and immediately returns the updated list. Available options are `sort`, `skip`, and `limit`.
 
 #### Events
 
@@ -155,4 +156,5 @@ liveFeed.on('update', function(update, aggregate) {
 
 ## Release History
 
+* **0.2.0** (2016-05-25) - Added pagination and the ability to sort by any list of fields with mixed directions
 * **0.1.0** (2016-05-19) - Initial Release

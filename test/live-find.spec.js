@@ -39,8 +39,8 @@ describe('PouchDB LiveFind', function() {
 
   var previous;
   var db = createDB('liveFindTest');
-  var feed1, feed2, feed3, feed4, feed5, feed6;
-  var watcher1, watcher2, watcher3, watcher4, watcher5, watcher6;
+  var feed1, feed2, feed3, feed4, feed5, feed6, feed7;
+  var watcher1, watcher2, watcher3, watcher4, watcher5, watcher6, watcher7;
 
   before(function() {
     previous = db.createIndex({
@@ -293,7 +293,7 @@ describe('PouchDB LiveFind', function() {
         return watcher4.fetchListUpdates(2);
       })
       .then(function(aggregates) {
-        expect(aggregates).to.deep.equal([ ['mario'], ['mario', 'dk'] ]);
+        expect(aggregates[1]).to.deep.equal(['mario', 'dk']);
         return Promise.all([
           watcher4.fetchListUpdates(2),
           db.bulkDocs(smashers2)
@@ -386,13 +386,7 @@ describe('PouchDB LiveFind', function() {
         return watcher6.fetchListUpdates(6);
       })
       .then(function(aggregates) {
-        expect(aggregates).to.deep.equal([
-            [],
-            [],
-            [ 'puff' ],
-            [ 'puff', 'mario' ],
-            [ 'puff', 'mario', 'dk' ],
-            [ 'puff', 'mario', 'dk' ] ]);
+        expect(aggregates[5]).to.deep.equal(['puff', 'mario', 'dk']);
       });
   });
 
@@ -434,6 +428,43 @@ describe('PouchDB LiveFind', function() {
         var update = results[0][0];
         expect(update).to.deep.equal(['mario', 'bulb', 'puff']);
         feed6.cancel();
+      });
+  });
+
+  it('should sort fields with mixed directions', function() {
+    var sortDocs = [
+      {_id: 'apple', letter: 'a', word: 'Apple'},
+      {_id: 'axel', letter: 'a', word: 'Axel'},
+      {_id: 'abby', letter: 'a', word: 'Abby'},
+      {_id: 'bat', letter: 'b', word: 'Bat'},
+      {_id: 'bone', letter: 'b', word: 'Bone'},
+      {_id: 'better', letter: 'b', word: 'Better'}
+    ];
+    return previous
+      .then(function() {
+        return db.destroy();
+      })
+      .then(function() {
+        db = createDB('liveFindTest');
+        return db.createIndex({
+          index: {fields: ['letter', 'word']}
+        });
+      })
+      .then(function() {
+        return db.bulkDocs(sortDocs);
+      })
+      .then(function() {
+        feed7 = db.liveFind({
+          selector: {letter: {$gt: null}},
+          sort: [{letter: 'desc'}, {word: 'asc'}],
+          aggregate: true
+        });
+        watcher7 = new UpdateWatcher(feed7);
+        return watcher7.fetchListUpdates(6);
+      })
+      .then(function(results) {
+        expect(results[5]).to.deep.equal(['bat', 'better', 'bone', 'abby', 'apple', 'axel']);
+        feed7.cancel();
       });
   });
 
