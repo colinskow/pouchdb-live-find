@@ -156,5 +156,6 @@ liveFeed.on('update', function(update, aggregate) {
 
 ## Release History
 
+* **0.3.0** (2017-01-13) - Upgraded dependencies to support `pouchdb-find v0.10.x` and `pouchdb v.6.x.x`
 * **0.2.0** (2016-05-25) - Added pagination and the ability to sort by any list of fields with mixed directions
 * **0.1.0** (2016-05-19) - Initial Release
