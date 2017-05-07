@@ -18,7 +18,7 @@ module.exports = function(config) {
       './node_modules/chai/chai.js',
       './node_modules/pouchdb/dist/pouchdb.js',
       './node_modules/pouchdb/dist/pouchdb.memory.js',
-      './node_modules/pouchdb-find/dist/pouchdb.find.js',
+      './node_modules/pouchdb/dist/pouchdb.find.js',
       './dist/pouchdb.live-find.js',
       './dist/live-find.browser.spec.js'
     ],
