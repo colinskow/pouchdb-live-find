@@ -56,6 +56,11 @@ PouchDB.plugin(require('pouchdb-find'));
 PouchDB.plugin(require('pouchdb-live-find'));
 ```
 
+#### TypeScript
+
+TypeScript definitions are available from [DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/pouchdb-live-find):
+`npm install --save-dev @types/pouchdb-live-find`
+
 ## Basic Usage
 
 ```js
